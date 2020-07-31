@@ -11,9 +11,11 @@ Zoom: link to zoom meeting
 Schedule and Hyperlinks
 
 | Module + Link | Week          | Description  |
-| ------------- |:-------------:| ------------:|
-| [1. Climate](all_class_resources/Module1-pHandCO2) | right-aligned | $1600 |
-| [2. Viruses](all_class_resources/Module2) | centered      |   $12 |
+| ------------- |:-------------:| :------------|
+| [1. Climate](all_class_resources/Module1-pHandCO2) | 0 | Welcome to 806 and R! |
+|               | [1](week-1-module-1) | Plotting and Statistics |
+|               | 2 | Bay Area Ocean pH Analysis |
+| [2. Viruses](all_class_resources/Module2) | 3      |  ? |
 | [3. Genetics](all_class_resources/Module3) | are neat      |    $1 |
 | [4. Imaging](all_class_resources/Module4) | are neat      |    $1 |
 
@@ -31,3 +33,12 @@ Syllabus: hyperlink to syllabus and class policies
   <li><b> Report: </b> description of the report that is to be submitted </li>
 
 </ul>
+
+## Week 1, Module 1
+
+## Week 2, Module 1
+
+## Week 3, Module 2
+
+## Week 4, Module 3
+
