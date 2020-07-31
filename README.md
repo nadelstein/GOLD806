@@ -8,7 +8,14 @@ Class times: 2.5 hours per class, 2 times per week
 
 Zoom: link to zoom meeting
 
-Hyperlinks to each week: 0, 1, 2, 3, 4, 5, ...
+Schedule and Hyperlinks
+
+| Module + Link | Week          | Description  |
+| ------------- |:-------------:| ------------:|
+| [1. Climate](http://github.com) | right-aligned | $1600 |
+| [2. Viruses](all_class_resources/Module2) | centered      |   $12 |
+| [3. Genetics](all_class_resources/Module3) | are neat      |    $1 |
+| [4. Imaging](all_class_resources/Module4) | are neat      |    $1 |
 
 Syllabus: hyperlink to syllabus and class policies
 
