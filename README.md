@@ -40,11 +40,56 @@ Syllabus: hyperlink to [syllabus](all_class_resources/syllabus/806_proposal_2019
 
 ## Week 1: Module 1
 
+- **Dates:** January X - Y
+- **Topics:** Introduction to data analysis and working with climate data
+- **Class material:** link to notes, slides, and videos from class!
+- **Reading:** link to reading assignments or resources
+- **Reflection:** description of weekly reflection
+- **Project:** [Hyperlink](all_class_resources/Module1-Hurricanes) example.
+- **Report:** description of the report that is to be submitted
+
+
 ## Week 2 Module 1
+
+- **Dates:** January X - Y
+- **Topics:** Introduction to data analysis and working with climate data
+- **Class material:** link to notes, slides, and videos from class!
+- **Reading:** link to reading assignments or resources
+- **Reflection:** description of weekly reflection
+- **Project:** [Hyperlink](all_class_resources/Module1-Hurricanes) example.
+- **Report:** description of the report that is to be submitted
+
 
 ## Week 4 Module 2
 
+- **Dates:** January X - Y
+- **Topics:** Introduction to data analysis and working with climate data
+- **Class material:** link to notes, slides, and videos from class!
+- **Reading:** link to reading assignments or resources
+- **Reflection:** description of weekly reflection
+- **Project:** [Hyperlink](all_class_resources/Module1-Hurricanes) example.
+- **Report:** description of the report that is to be submitted
+
+
 ## Week 7 Module 3
 
+- **Dates:** January X - Y
+- **Topics:** Introduction to data analysis and working with climate data
+- **Class material:** link to notes, slides, and videos from class!
+- **Reading:** link to reading assignments or resources
+- **Reflection:** description of weekly reflection
+- **Project:** [Hyperlink](all_class_resources/Module1-Hurricanes) example.
+- **Report:** description of the report that is to be submitted
+
+
 ## Week 11 Module 4
+
+- **Dates:** January X - Y
+- **Topics:** Introduction to data analysis and working with climate data
+- **Class material:** link to notes, slides, and videos from class!
+- **Reading:** link to reading assignments or resources
+- **Reflection:** description of weekly reflection
+- **Project:** [Hyperlink](all_class_resources/Module1-Hurricanes) example.
+- **Report:** description of the report that is to be submitted
+
 
