@@ -26,6 +26,7 @@ Syllabus: hyperlink to [syllabus](all_class_resources/syllabus/806_proposal_2019
 
 :bulb: Complete list of github [markdown emojis](https://gist.github.com/rxaviers/7360908)
 
+-----
 
 ## Week 0 Module 1
 
