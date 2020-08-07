@@ -96,6 +96,6 @@ Syllabus: hyperlink to [syllabus](all_class_resources/syllabus/806_proposal_2019
 
 -----
 
-<a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img alt="cc-by-nc-sa" style="border-width:0" src="https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png" /></a><br />All the media content (narrative and images) is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+<a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img alt="cc-by-nc-sa" style="border-width:0" src="https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png" /></a><br />All the media content (narrative and images) is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
 All source code (i.e. code in script files) is licensed under a <a href="https://choosealicense.com/licenses/gpl-3.0/" target="_blank">GNU GPLv3</a>.
