@@ -1,11 +1,16 @@
 ---
 title: "Day 1.1): Hurricanes Data"
-output: github_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+> - In this part we provide an introduction to the topic of Hurricanes.
+> - Watch the youtube video: "How do hurricanes form?"
+> - Become familiar with common terms associated to Hurricanes.
+
 
 ## Introduction
 
@@ -89,10 +94,11 @@ sustained wind speed:
 - The official Atlantic hurricane season runs from June through November, but
 occasionally storms form outside those months.
 
-- September is the most common month for hurricanes making landfall in the U.S.,
-followed by August and October (based on 1851 to 2015 data)
+- September is the most active month (where most of the hurricanes occur),
+followed by August, and October (based on 1851 to 2015 data).
 
-- A typical year has 12 named storms, six hurricanes, and three major hurricanes.
+- A typical year has 12 named storms, including six hurricanes of which three 
+become major hurricanes (category 3, 4, and 5).
 
 - No hurricanes made U.S. landfall before June and after November during the period studied (1851 to 2015 data).
 
