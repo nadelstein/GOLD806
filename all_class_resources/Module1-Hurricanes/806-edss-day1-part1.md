@@ -1,6 +1,11 @@
 Day 1.1): Hurricanes Data
 ================
 
+>   - In this part we provide an introduction to the topic of
+>     Hurricanes.
+>   - Watch the youtube video: “How do hurricanes form?”
+>   - Become familiar with common terms associated to Hurricanes.
+
 ## Introduction
 
 <img src="../images/eda/sandy-hurricane.jpg" title="NASA satellite image of hurricane Sandy, 2012 (source: wikimedia commons)" alt="NASA satellite image of hurricane Sandy, 2012 (source: wikimedia commons)" width="75%" />
@@ -83,12 +88,12 @@ Day 1.1): Hurricanes Data
   - The official Atlantic hurricane season runs from June through
     November, but occasionally storms form outside those months.
 
-  - September is the most common month for hurricanes making landfall in
-    the U.S., followed by August and October (based on 1851 to 2015
-    data)
+  - September is the most active month (where most of the hurricanes
+    occur), followed by August, and October (based on 1851 to 2015
+    data).
 
-  - A typical year has 12 named storms, six hurricanes, and three major
-    hurricanes.
+  - A typical year has 12 named storms, including six hurricanes of
+    which three become major hurricanes (category 3, 4, and 5).
 
   - No hurricanes made U.S. landfall before June and after November
     during the period studied (1851 to 2015 data).
