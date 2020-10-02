@@ -1,0 +1,540 @@
+---
+title: "Day 3.2): Analyzing Hurricanes"
+output: github_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(maps)      
+library(ggplot2)
+```
+
+```{r eval = FALSE}
+# used packages
+library(dplyr)
+library(maps)      
+library(ggplot2)
+```
+
+
+
+## Hurricanes Data
+
+We perform an exploratory analysis of hurricanes data in the North Atlantic 
+from years 1980 to 2019, focusing on the following research claims:
+
+A) A typical hurricane season runs from June through November, but
+occasionally storms form outside those months.
+
+B) A typical year has 12 named storms, including six hurricanes of which three 
+become major hurricanes (category 3, 4, and 5).
+
+C) September is the most active month (where most of the hurricanes occur),
+followed by August, and October.
+
+D) No hurricanes made U.S. landfall before June and after November.
+
+
+
+
+## Importing Data
+
+Regardless of the importing approach you 
+decide to use, you have to import data following these specifications:
+
+- Import only the first 16 columns (from `SID` to `LANDFALL`)
+
+- Specify data types for the 16 imported columns as:
+    + `SEASON`, `NUMBER`, `WMO_WIND`, `WMO_PRES`, `DIST2LAND`, and `LANDFALL`
+    must be of type `"integer"`
+    + `LAT` and `LON` must be of type `"double"` or `"real"`
+    + the rest of the columns must be of type `"character"`
+    
+```{r}
+hurdat <- "data/ibtracs.NA.list.v04r00.csv"
+
+# names of first 16 columns
+col_names <- c(
+  "SID",
+  "SEASON",
+  "NUMBER",
+  "BASIN",
+  "SUBBASIN",
+  "NAME",
+  "ISO_TIME",
+  "NATURE",
+  "LAT",
+  "LON",
+  "WMO_WIND",
+  "WMO_PRES",
+  "WMO_AGENCY",
+  "TRACK_TYPE",
+  "DIST2LAND",
+  "LANDFALL"
+)
+
+# data-type of first 16 columns
+col_types <- c(
+  "character",
+  "integer",
+  "integer",
+  "character",
+  "character",
+  "character",
+  "character",
+  "character",
+  "double",
+  "double",
+  "integer",
+  "integer",
+  "character",
+  "character",
+  "integer",
+  "integer"  
+)
+
+
+dat <- read.csv(
+  file = hurdat,
+  colClasses = c(col_types, rep("NULL", 147)),
+  stringsAsFactors = FALSE, 
+  skip = 86272, 
+  na.strings = " ")
+
+colnames(dat) <- col_names
+```
+
+We filter storms up to year 2019, and we add column `MONTH`
+
+```{r}
+dat <- dat %>% filter(SEASON <= 2019)
+
+# adding month
+dat$MONTH <- as.numeric(substr(dat$ISO_TIME, 6, 7))
+```
+
+We display the structure to examine the data types of each column:
+
+```{r}
+# data structure
+str(dat, vec.len = 1)
+```
+
+
+-----
+
+## Univariate EDA
+
+Frequencies of `BASIN`
+
+```{r}
+table(dat$BASIN)
+```
+
+
+Frequencies of `SUBBASIN`
+
+```{r}
+table(dat$SUBBASIN)
+```
+
+
+Out of curiosity, let's inspect in what year (season) there is data for `BASIN`
+of category `EP`
+
+```{r}
+dat %>% 
+  filter(BASIN == "EP") %>%
+  count(SEASON)
+```
+
+
+Number of records per year
+
+```{r records-per-year}
+records_per_year <- dat %>%
+  count(SEASON, name = "count")
+
+ggplot(data = records_per_year, aes(x = SEASON, y = count)) +
+  geom_point() + 
+  geom_line() +
+  labs(title = "Number of Records per year")
+```
+
+
+Summary statistics of wind pressure `WMO_PRES`
+
+```{r hist-pres, out.width='50%'}
+summary(dat$WMO_PRES)
+hist(dat$WMO_PRES, col = 'gray80')
+```
+
+
+Summary statistics of wind pressure `WMO_WIND`
+
+```{r hist-wind, out.width='50%'}
+summary(dat$WMO_WIND)
+hist(dat$WMO_WIND, col = 'gray80')
+```
+
+
+-----
+
+
+## Research Claim A) "Typical Hurricane Season"
+
+__A typical hurricane season runs from June through November, but occasionally storms form outside those months.__
+
+
+One way to approach the first claim is by graphing the counts or frequencies
+of records in each month (see figure below). As you can tell, the storms 
+activity from Jan to May is very rare. Then, from June to November we can 
+see a substatntial amount of reords, with their peak occurring in September.
+December is also not a very active month.
+
+```{r records-per-month}
+# Frequencies of storm records per month
+ggplot(dat, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", limits = 1:12,
+                   labels = substr(month.name, 1, 3)) + 
+  labs(title = "Frequencies of records per month") +
+  theme_bw()
+```
+
+
+Another way to approach the first claim is by graphing the counts of unique
+storms per month (see figure below). Like in the previous barchart, the storms 
+activity from Jan to May is very rare. Then, from June to November we can 
+see a substatntial amount of reords, with their peak occurring in September.
+December is also not a very active month.
+
+```{r}
+# numer of unique storms per month
+dat %>%
+  group_by(MONTH, SID) %>%
+  count(MONTH) %>% pull(MONTH) %>%
+  table()
+```
+
+
+```{r storms-per-month}
+# numer of unique storms per month
+storms_per_month <- dat %>%
+  group_by(MONTH, SID) %>%
+  count(MONTH)
+
+ggplot(data = storms_per_month, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", limits = 1:12,
+                   labels = substr(month.name, 1, 3)) + 
+  labs(title = "Number of storms per month (1980 - 2019)") +
+  theme_bw()
+```
+
+
+
+#### Stroms by month, in the 1980s
+
+```{r storms_1980s_month}
+storms_1980s_month <- dat %>% 
+  filter(SEASON %in% 1980:1989) %>%
+  group_by(SID, SEASON) %>%
+  select(SID, SEASON, MONTH)
+
+ggplot(storms_1980s_month, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", labels = 4:12, limits = 4:12) + 
+  facet_wrap(~ SEASON) +
+  theme_bw()
+```
+
+
+#### Stroms by month, in the 1990s
+
+```{r storms_1990s_month}
+storms_1990s_month <- dat %>% 
+  filter(SEASON %in% 1990:1999) %>%
+  group_by(SID, SEASON) %>%
+  select(SID, SEASON, MONTH)
+
+ggplot(storms_1990s_month, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", labels = 4:12, limits = 4:12) + 
+  facet_wrap(~ SEASON) +
+  theme_bw()
+```
+
+
+#### Stroms by month, in the 2000s
+
+```{r storms_2000s_month}
+storms_2000s_month <- dat %>% 
+  filter(SEASON %in% 2000:2009) %>%
+  group_by(SID, SEASON) %>%
+  select(SID, SEASON, MONTH)
+
+ggplot(storms_2000s_month, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", labels = 1:12, limits = 1:12) + 
+  facet_wrap(~ SEASON) +
+  theme_bw()
+```
+
+
+#### Stroms by month, in the 2010s
+
+```{r storms_2010s_month}
+storms_2010s_month <- dat %>% 
+  filter(SEASON %in% 2010:2019) %>%
+  group_by(SID, SEASON) %>%
+  select(SID, SEASON, MONTH)
+
+ggplot(storms_2010s_month, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", labels = 1:12, limits = 1:12) + 
+  facet_wrap(~ SEASON) +
+  theme_bw()
+```
+
+
+-----
+
+
+## Research claim B) "Typical storm year"
+
+__A typical year has 12 named storms, including six hurricanes of which three become major hurricanes (category 3, 4, and 5).__
+
+
+For illustration purposes, let's explore storms from 2010. 
+
+1) First we ignore those unnamed storms (`NAME != "NOT_NAMED"`). From the 
+output below, you can tell that there are 19 named storms:
+
+```{r}
+# there are 12 hurricanes in 2010
+dat %>% 
+  filter(SEASON == 2010 & NAME != "NOT_NAMED") %>%
+  distinct(NAME)
+```
+
+
+2) Then, we focus on storms that became hurricanes (`WMO_WIND >= 64`). In this 
+year, it turns out that there are exactly 12 hurricanes:
+
+```{r}
+# there are 12 hurricanes in 2010
+dat %>% 
+  filter(SEASON == 2010 & NAME != "NOT_NAMED" & WMO_WIND >= 64) %>%
+  distinct(NAME)
+```
+
+
+3) Finally, we can filter out those hurricanes of category 3, 4, and 5 which 
+must have wind speed of 96 knots or more:
+
+```{r}
+# major hurricanes in 2010
+dat %>% 
+  filter(SEASON == 2010 & WMO_WIND >= 96) %>%
+  distinct(NAME)
+```
+
+
+
+### Number of named storms per year
+
+We can now compute the number of named storms per year, and then calculate 
+the avergae number of named storms:
+
+```{r}
+# ========================================================
+# Number of named storms per year
+# ========================================================
+
+# ignore unnamed storms, and select hurricanes
+named_storms <- dat %>% 
+  filter(NAME != "NOT_NAMED")
+
+hurrs_per_year <- named_storms %>%
+  group_by(SEASON) %>%
+  distinct(NAME) %>%
+  count(SEASON, name = "count")
+
+hurrs_per_year
+```
+
+Average of named storms:
+
+```{r}
+mean(hurrs_per_year$count)
+```
+
+Likewise, we can graph the frequencies with a barchart:
+
+```{r}
+named_storms %>%
+  group_by(SEASON) %>%
+  distinct(NAME) %>%
+  ggplot() +
+  geom_bar(aes(x = SEASON)) +
+  geom_hline(yintercept = 12, col = "red") +
+  labs(title = "Number of named storms per year",
+       subtitle = "(red line indicates 12 storms)")
+```
+
+
+Next, we filter storms that became hurricanes (Wind speed >= 64 knots):
+
+```{r}
+# ========================================================
+# A typical year has 6 hurricanes
+# Recall hurricanes have wind speed > 64 knots (74 mph)
+# ========================================================
+
+count_hurricanes_by_year <- dat %>% 
+  filter(WMO_WIND >= 64) %>%
+  group_by(SID) %>%
+  count(SEASON) %>%
+  pull(SEASON) %>%
+  table()
+  
+mean(count_hurricanes_by_year)
+
+summary(as.numeric(count_hurricanes_by_year))
+```
+
+
+-----
+
+
+## Research claim C) "September is the most active month"
+
+__September is the most active month (where most of the hurricanes occur), followed by August, and October.__
+
+One way to approach the first claim is by graphing the counts or frequencies
+of records in each month (see figure below). As you can tell, the tallest 
+bar occurs in Sep, the second tallest bar occurs in Aug, and the hird tallest
+bar occurs in Oct.
+
+```{r freqs-records-per-month}
+# Frequencies of storm records per month
+ggplot(dat, aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", limits = 1:12,
+                   labels = substr(month.name, 1, 3)) + 
+  labs(title = "Frequencies of records per month") +
+  theme_bw()
+```
+
+```{r distrib-per-month}
+# ========================================================
+# September is the most common month for hurricanes making 
+# landfall in the U.S., followed by August and October
+# ========================================================
+
+# unique hurricanes by month
+storms_year_month <- dat %>% 
+  group_by(SID, SEASON) %>%
+  select(SID, SEASON, MONTH) %>%
+  count(MONTH)
+
+ggplot(storms_year_month, aes(x = MONTH, y = n)) +
+  geom_boxplot(aes(group = MONTH), fill = "gray80") + 
+  scale_x_discrete("Month", labels = 1:12, limits = 1:12) + 
+  labs(title = "Distribution of records per month") +
+  theme_bw()
+```
+
+
+-----
+
+
+## Research claim D) "Hurricanes making landfall"
+
+__No hurricanes made U.S. landfall before June and after November.__
+
+To determine if a hurricane made U.S. landfall we could look at variables
+`DIST2LAND` and `LANDFALL`. According to the data dictionary, 
+
+
+#### Analysis based on `DIST2LAND`
+
+`DIST2LAND` indicates the distance to land from the current position, and 
+it is the nearest at the present time in any direction. We can assume that a
+value of zero means _touching land_.
+
+```{r dist2land_by_month}
+# number of records with dist2land == 0
+dat %>% 
+  filter(DIST2LAND == 0) %>%
+  group_by(MONTH) %>%
+  count(MONTH)
+```
+
+```{r dist2land_by_month_plot, out.width='50%'}
+dat %>% 
+  filter(DIST2LAND == 0) %>%
+  group_by(MONTH) %>%
+  ggplot(aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", labels = 5:12, limits = 5:12) + 
+  theme_minimal()
+```
+
+
+
+#### Analysis based on `LANDFALL`
+
+`LANDFALL` indicates the nearest location to land within next 6 hours, and this 
+can be thought of a landfall flag. A value of zero means landfall within 6
+hours.
+
+
+```{r landfall_by_month}
+# number of records with LANDFALL == 0
+dat %>% 
+  filter(LANDFALL == 0) %>%
+  group_by(MONTH) %>%
+  count(MONTH)
+```
+
+```{r landfall_by_month_plot, out.width='50%'}
+dat %>% 
+  filter(LANDFALL == 0) %>%
+  group_by(MONTH) %>%
+  ggplot(aes(x = MONTH)) +
+  geom_bar() + 
+  scale_x_discrete("Month", labels = 5:12, limits = 5:12) + 
+  theme_minimal()
+```
+
+
+#### Landfall Resutls
+
+Based on our analysis, it seems that some hurricanes have made landfall before
+June (in May), and also after November (in December). To confirm whether this
+data involves US landfall we can produce a map like the one below:
+
+```{r}
+# filter hurricanes outside months 6-11
+subdat <- dat %>% 
+  filter(WMO_WIND >= 64) %>% 
+  group_by(SID) %>% filter(MONTH < 6 | MONTH >11)
+
+#data for the map of the USA
+us_map <- map_data("usa")
+
+#USA map with the paths for just hurricanes
+ggplot()+
+  geom_map(data = us_map, map = us_map ,aes(map_id = region))+
+  expand_limits( x = us_map$long, y = us_map$lat)+
+  geom_path(data = subdat, aes(y = LAT, x = LON, col = SID))+
+  theme(legend.text = element_text(size = 6))+
+  labs(title = "Hurricane trajectoriess before Jun and after Nov")
+```
+
+From the map, none of the hurricanes made US landfall.
