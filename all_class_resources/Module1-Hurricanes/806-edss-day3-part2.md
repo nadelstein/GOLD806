@@ -182,8 +182,8 @@ records_per_year <- dat %>%
   count(SEASON, name = "count")
 
 ggplot(data = records_per_year, aes(x = SEASON, y = count)) +
-  geom_point() + 
-  geom_line() +
+  #geom_point() + 
+  geom_col() +
   labs(title = "Number of Records per year")
 ```
 
@@ -219,6 +219,33 @@ hist(dat$WMO_WIND, col = 'gray80')
 
 <img src="806-edss-day3-part2_files/figure-gfm/hist-wind-1.png" width="50%" />
 
+Since we are given Longitude (LON) and Latitude (LAT), we can graph them
+both using `geom_point()` as it would resemble us plotting the storms on
+an x and y axis.
+
+``` r
+ggplot(data = dat, aes(x = LON, y = LAT, color = MONTH)) + 
+  geom_point()
+```
+
+![](806-edss-day3-part2_files/figure-gfm/lon_lat-1.png)<!-- -->
+
+A better visual display can be obtained by including a map to the
+backgroud:
+
+``` r
+gg_world <- ggplot() + 
+  geom_polygon(data = map_data("world"), aes(x = long, y = lat, group = group), 
+               fill = "gray95", colour = "gray70", size = 0.2) + theme_bw()
+
+gg_world + 
+  geom_point(data = dat, 
+             aes(x = LON, y = LAT, group = SID), size = 0.1, alpha = 0.3) + 
+  labs(title = "Storm trajectories 1980-2019")
+```
+
+![](806-edss-day3-part2_files/figure-gfm/map_lon_lat-1.png)<!-- -->
+
 -----
 
 ## Research Claim A) “Typical Hurricane Season”
@@ -238,7 +265,7 @@ ggplot(dat, aes(x = MONTH)) +
   geom_bar() + 
   scale_x_discrete("Month", limits = 1:12,
                    labels = substr(month.name, 1, 3)) + 
-  labs(title = "Frequencies of records per month") +
+  labs(title = "Frequencies of storm records per month") +
   theme_bw()
 ```
 
@@ -272,11 +299,27 @@ ggplot(data = storms_per_month, aes(x = MONTH)) +
   geom_bar() + 
   scale_x_discrete("Month", limits = 1:12,
                    labels = substr(month.name, 1, 3)) + 
-  labs(title = "Number of storms per month (1980 - 2019)") +
+  labs(title = "Number of unique storms per month (1980 - 2019)") +
   theme_bw()
 ```
 
 ![](806-edss-day3-part2_files/figure-gfm/storms-per-month-1.png)<!-- -->
+
+We can try to use facets by year:
+
+``` r
+# plot monthly storms frequency in a given year
+ggplot(dat, aes(x = MONTH)) + 
+  geom_bar() + 
+  facet_wrap(~ SEASON) +
+  labs(x = "Month",
+       y = "Frequency", 
+       title = "Monthly Storms Frequency in a Given Year") +
+  scale_x_discrete("Month", labels = 1:12, limits = 1:12) +
+  theme_bw()
+```
+
+![](806-edss-day3-part2_files/figure-gfm/storms_by_year_facets-1.png)<!-- -->
 
 #### Stroms by month, in the 1980s
 
@@ -345,6 +388,19 @@ ggplot(storms_2010s_month, aes(x = MONTH)) +
 ```
 
 ![](806-edss-day3-part2_files/figure-gfm/storms_2010s_month-1.png)<!-- -->
+
+#### Mapping Storms by Month
+
+``` r
+gg_world + 
+  geom_path(data = dat, 
+            aes(x = LON, y = LAT, group = SID), 
+            size = 0.2, alpha = 0.3, color = "#F43F3F") + 
+  labs(title = "Storm trajectories 1980-2019") +
+  facet_wrap(~ MONTH)
+```
+
+![](806-edss-day3-part2_files/figure-gfm/map_storms_month-1.png)<!-- -->
 
 -----
 
@@ -655,16 +711,33 @@ dat %>%
 
 #### Landfall Resutls
 
-Based on our analysis, it seems that some hurricanes have made landfall
-before June (in May), and also after November (in December). To confirm
-whether this data involves US landfall we can produce a map like the one
-below:
+Based on our analysis, it seems that some storms have made landfall
+before June (in May), and also after November (in December). Who are
+these storms? Let’s filter out some data:
+
+``` r
+# hurricanes outside months 6-11 making landfall
+dat %>% 
+  filter(WMO_WIND >= 64 & (MONTH < 6 | MONTH > 11) & LANDFALL == 0) %>% 
+  group_by(SID) %>% 
+  count(NAME, MONTH)
+```
+
+    ## # A tibble: 1 x 4
+    ## # Groups:   SID [1]
+    ##   SID           NAME    MONTH     n
+    ##   <chr>         <chr>   <dbl> <int>
+    ## 1 2013149N14264 BARBARA     5     2
+
+It seems that there’s one hurricane that made landfall during the month
+of May. To confirm whether this hurricane made US landfall, we can
+produce a map like the one below:
 
 ``` r
 # filter hurricanes outside months 6-11
 subdat <- dat %>% 
-  filter(WMO_WIND >= 64) %>% 
-  group_by(SID) %>% filter(MONTH < 6 | MONTH >11)
+  filter(WMO_WIND >= 64 & (MONTH < 6 | MONTH > 11) & LANDFALL == 0) %>% 
+  group_by(SID)
 
 #data for the map of the USA
 us_map <- map_data("usa")
@@ -673,11 +746,40 @@ us_map <- map_data("usa")
 ggplot()+
   geom_map(data = us_map, map = us_map ,aes(map_id = region))+
   expand_limits( x = us_map$long, y = us_map$lat)+
-  geom_path(data = subdat, aes(y = LAT, x = LON, col = SID))+
+  geom_path(data = subdat, aes(y = LAT, x = LON, col = SID), size = 2)+
   theme(legend.text = element_text(size = 6))+
   labs(title = "Hurricane trajectoriess before Jun and after Nov")
 ```
 
-![](806-edss-day3-part2_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](806-edss-day3-part2_files/figure-gfm/barbara-1.png)<!-- -->
 
 From the map, none of the hurricanes made US landfall.
+
+#### Landfall Resutls (alternative)
+
+An alternative way to address this claim is by filtering hurricanes
+(`WMO_WIND >= 64`) that made lanfall (`LANDFALL == 0`), and plotting
+them on a map.
+
+``` r
+hurricanes_land <- dat %>% 
+  filter(WMO_WIND >= 64 & DIST2LAND == 0)
+
+gg_world <- ggplot() + 
+  geom_polygon(data = map_data("world"), aes(x = long, y = lat, group = group), 
+               fill = "gray95", colour = "gray70", size = 0.2) + theme_bw()
+
+gg_world + 
+  geom_point(data = hurricanes_land, 
+             aes(x = LON, y = LAT, color = factor(MONTH))) + 
+  xlim(c(-150, -60)) + ylim(c(0, 45)) + 
+  labs(title = "Hurricanes that Hit Land from 1980-2019")
+```
+
+    ## Warning: Removed 8 rows containing missing values (geom_point).
+
+![](806-edss-day3-part2_files/figure-gfm/hurrs_landfall-1.png)<!-- -->
+
+As you can tell, only one hurricane made landfall outside the months of
+June to November. More specifically, this is the hurricane on May, which
+made landfall in Mexico.
