@@ -13,3 +13,8 @@ __Day 2__
 
 - [part 1](806-edss-day2-part1.md): Basic plots
 - [part 2](806-edss-day2-part2.md): Basic maps
+
+__Day 3__
+
+- [part 1](806-edss-day3-part1.md): EDA of hurricanes in the North Atlantic (I)
+- [part 2](806-edss-day3-part2.md): EDA of hurricanes in the North Atlantic (II)
