@@ -46,6 +46,10 @@ Day 1.1): Hurricanes Data
 
 ## A little bit about Hurricanes
 
+NOAA SciJinks has a webpage about basic information on hurricaces.
+
+<a href="https://scijinks.gov/hurricane/" target="_blank">https://scijinks.gov/hurricane/</a>
+
 </br>
 
 <iframe width="520" height="301" src="https://www.youtube.com/embed/wPDoIrGUrEc" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
@@ -97,6 +101,10 @@ Day 1.1): Hurricanes Data
 
   - No hurricanes made U.S. landfall before June and after November
     during the period studied (1851 to 2015 data).
+
+## How do hurricanes form?
+
+<img src="https://scijinks.gov/review/hurricane/hurricanes_poster_large.jpg" title="How do hurricanes form? (source: SciJinks)" alt="How do hurricanes form? (source: SciJinks)" width="75%" />
 
 ## Hurricane Tracks Data
 
