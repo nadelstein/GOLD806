@@ -1,0 +1,328 @@
+---
+title: "Analyzing Hurricanes (part 3)"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r include=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+
+## Reminder
+
+You may need to load packages `"dplyr"` and `"ggplot2"` with the `library()`
+function (load them one-by-one:
+
+```{r eval=FALSE}
+# (you should include this command in your source file)
+library(dplyr)
+library(ggplot2)
+```
+
+We've been working with the table `storms75`, which was obtained by _filtering_ 
+those rows with `year` equal to 1975:
+
+```{r}
+storms75 <- filter(storms, year == 1975)
+storms75
+```
+
+
+-----
+
+## Group-by Operations
+
+Another common task when exploring data has to do with computations applied 
+on certain groups or categories of data. `"dplyr"` provides the function 
+`group_by()` which takes a data table, and we specify the column(s) on which
+rows will be grouped by:
+
+```{r fig.cap='Group-by operations', echo = FALSE, out.width='80%'}
+knitr::include_graphics("https://www.gastonsanchez.com/intro2cwd/images/eda/dplyr-group-by.svg")
+```
+
+For example, we may be interested in calculating the average `wind` speed and 
+average `pressure` of each storm in 1975. First we need to group by `name`, 
+and then we use `summarise()` to indicate that we want to get the `mean()` 
+of `wind` and `pressure`, like this:
+
+```{r}
+summarise(
+  group_by(storms75, name),
+  avg_wind = mean(wind),
+  avg_pressure = mean(pressure)
+)
+```
+
+Sometimes, you'll find convenient to assign the output into its own table:
+
+```{r}
+avg_wind_pressure_75 <- summarise(
+  group_by(storms75, name),
+  avg_wind = mean(wind),
+  avg_pressure = mean(pressure)
+)
+
+avg_wind_pressure_75
+```
+
+
+### Your Turn
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`max_wind_pressure_75` containing columns: 1)`name` of 
+storm, 2) `max_wind` maximum wind speed, and 3) `max_pressure` maximum pressure
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`wind_stats_75` containing columns: 1)`name` of storm, 2) `min_wind` minimum 
+wind speed, 3) `avg_wind` mean wind speed, 4) `med_wind` median wind speed, 
+and 5) `max_wind` maximum wind speed.
+
+
+-----
+
+## Arrange operations
+
+The table of summary means `avg_wind_pressure_75` is ordered alphabetically by 
+`name`. But perhaps you may want to organize its contents by `avg_wind` or by
+`avg_pressure`. Let's see how to do this.
+
+Besides `group_by()` operations, another common type of manipulation is the 
+arragement of rows based on the values of one or more columns. In `"dplyr"`, 
+this can easily be achieved with the function `arrange()`. The way this function 
+works is passing the name of the table, and then specifying one or more columns
+to order rows based on such values.
+
+```{r fig.cap='Arranging rows', echo = FALSE, out.width='85%'}
+knitr::include_graphics("https://www.gastonsanchez.com/intro2cwd/images/eda/dplyr-arrange.svg")
+```
+
+Say you want to arrange the contents of the average summary table, by taking 
+into account the columnd `avg_wind`:
+
+```{r}
+arrange(avg_wind_pressure_75, avg_wind)
+```
+
+Likewise, you can also arrange the averages by `avg_pressure`:
+
+```{r}
+arrange(avg_wind_pressure_75, avg_pressure)
+```
+
+The default behavior of `arrange()` is to organize rows in increasing order.
+But what if you want to organize rows in decreasing order? No problem, just 
+use the auxiliary function `desc()` to indicate that rows should be arranged 
+decreasingly:
+
+```{r}
+arrange(avg_wind_pressure_75, desc(avg_wind))
+```
+
+
+-----
+
+### Further inspection of 1975 storm Amy
+
+Let's focus on a specific storm, for example storm `Amy` in 1975. For sake of 
+simplicity, we are going to create a table `amy75` containing the values of 
+this storm:
+
+```{r}
+amy75 <- filter(storms75, name == "Amy")
+amy75
+```
+
+Here's a couple of questions that we could investigate:
+
+- which are the `status` categories for Amy?
+
+- during which months was Amy active? and for how many days?
+
+- what are the basic summary statistics for `wind` and `pressure`?
+
+```{r}
+# which are the `status` categories for Amy?
+distinct(amy75, status)
+```
+
+```{r}
+# during which months was Amy active?
+distinct(amy75, month)
+```
+
+```{r}
+# for how many days was Amy active?
+count(distinct(amy75, day))
+```
+
+```{r}
+# summary statistics for wind
+summary(select(amy75, wind))
+```
+
+```{r}
+# summary statistics for pressure
+summary(select(amy75, pressure))
+```
+
+
+-----
+
+### Number of Storms per Year
+
+If you recall, our first ggplot involved a barchart for the values in column
+`year`
+
+```{r}
+ggplot(data = storms) + 
+  geom_bar(aes(x = year))
+```
+
+We discovered the 41-year period of recorded data from 1975 to 2015. We can 
+take a further step and ask: how many storms are there in each year? 
+
+To answer this question, we need to do some data manipulation with `"dplyr"`. 
+Our general recommendation when working with `"dplyr"`'s functions, especially 
+when you are learning about them, is to do computations step by step, deciding 
+which columns you need to use, which rows to consider, which functions to call, 
+and so on.
+
+Think about the columns that we need to select to find the number of unique 
+storms per year. We obviously need `year`, but this column alone it's not enough 
+because for any given storm we have multiple records with the same year. 
+Therefore, we also need column `name`.
+
+For illustration purposes, we are going to build the data manipulation pipeline
+step by step. As you get more comfortable with `"dplyr"` and other functions,
+you won't have the need to disect every single command.
+A first step is to `select()` variables `year` and `name`:
+
+```{r}
+select(storms, year, name)
+```
+
+Next, we need to `group_by()` year. At first glance, the previous output and 
+the output below seem identical. But notice the tiny difference: the output
+below has a second line of text with some relevant information: 
+`# Groups:   year [41]`, telling us that the values are grouped by year.
+
+```{r}
+group_by(select(storms, year, name), year)
+```
+
+Then, we identify the `distinct()` values (combination of year-name):
+
+```{r}
+distinct(group_by(select(storms, year, name), year))
+```
+
+For convenience purposes, let's assign this table into its own object, 
+which we can call `storms_year_name`
+
+```{r}
+storms_year_name <- distinct(group_by(select(storms, year, name), year))
+```
+
+Finally, we need to `count()` how many storms are in each year:
+
+```{r}
+count(storms_year_name, year)
+```
+
+All the previous commands can be assembled together with various embedded lines
+of code:
+
+```{r}
+storms_per_year <- count(
+  distinct(
+    group_by(
+      select(storms, year, name), 
+      year)
+    )
+  )
+
+storms_per_year
+```
+
+Now that we have the counts or frequencies, we can make our next barchart.
+In this case, we will use the table `storms_year_name` as the input data for
+`ggplot()`:
+
+```{r}
+ggplot(data = storms_year_name) + 
+  geom_bar(aes(x = year))
+```
+
+By looking at the chart, there are some fairly tall bars. Although it's hard 
+to see exactly which years have a considerably large number of storms, 
+eyeballing things out it seems that around 1995, 2003, 2005, and 2010 there are 
+20 or more storms. We can find the actual answer by using `arrange()`,
+specifying the counts to be shown in descending order---with `desc()`:
+
+```{r}
+arrange(storms_per_year, desc(n))
+```
+
+As you can tell, in the 41-year period from 1975 to 2015, there are two years,
+1995 and 2005, with a maximum number of storms equal to 21.
+
+
+-----
+
+### Summary
+
+So far, we've covered several functions from `"dplyr"`, as well as some other
+functions in R:
+
+- functions from `"dplyr"`
+    - `pull()` and `select()`
+    - `filter()`
+    - `group_by()`
+    - `arrange()` and `desc()`
+    - `count()`, `distinct()`, `summarise()`
+- functions in base R
+    - `unique()`, `sort()`, `mean()`, `summary()`
+
+
+-----
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`storm_records_per_year` containing three columns: 1) `name` of storm, 2) `year` 
+of storm, and 3) `count` for number of recorded valued (of the corresponding 
+storm).
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`storms_categ5` containing the name and year of those storms of category 5. 
+
+- Use `"dplyr"` functions/commands to display a table showing the `status`, 
+`avg_pressure` (average pressure), and `avg_wind` (average wind speed), for 
+each type of storm `category`. This table should contain four columns: 1) 
+`category`, 2) `status`, 3) `avg_pressure`, and 4) `avg_wind`.
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`max_wind_per_storm` containing three columns: 1) `year` of storm, 2) `name` of 
+storm, and 3) `max_wind` maximum wind speed record (for that storm).
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`max_wind_per_year` containing three columns: 1) `year` of storm, 2) `name` of 
+storm, and 3) `wind` maximum wind speed record (for that year). Arrange rows by 
+wind speed in decreasing order.
+
+- Make a scatterplot of `wind` (x-axis) and `ts_diameter` (y-axis), and add
+a regression line---via `geom_smooth()`. 
+
+  a) Try `geom_smooth()` with `method = lm` to fit a least squares regression line. 
+
+  b) Try `geom_smooth()` with `method = loess` to fit a local polynomial regression. 
+
+- Repeat the previous scatterplot of `wind` (x-axis) and `ts_diameter` (y-axis), 
+but now use `status` to color code the points, and use the `alpha` argument to 
+add some transparency to the dots.
+
+- Take a look at the cheatsheet of `"ggplot2"` and make at least 5 more 
+different graphs (e.g. of one variable, of two variables, of three variables).
+

@@ -1,0 +1,562 @@
+---
+title: "Analyzing Hurricanes (part 2)"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r include=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+-----
+
+## Exploratory Data Analysis
+
+In this first module, you will have your first contact with tabular data 
+(i.e. data arranged in rows and columns) which is 
+the most common format in which data is handled for data analysis.
+
+In order to have a gentle introduction to R, we are going to use a data set that 
+comes in one the most popular R packages for manipulation of tables: `"dplyr"`. 
+The main reason to start in this mode, is to avoid having to worry about data 
+importing issues, which we cover later in the course. The other reason is to 
+have data that is already clean and ready to be analyzed.
+
+
+### Manipulating tables with `"dplyr"` framework
+
+In this module, you will start learning a couple of approaches to manipulate 
+tables and create basic statistical graphics. 
+
+- To manipulate tables, we are going to use the 
+functionality of the package `"dplyr"`. This package allows you to work with 
+tabular data _in a syntactic way_.
+
+- To create graphics in a fairly consistent and visually pleasant way 
+we are going to use the package `"ggplot2"`.
+
+In theory, the first thing you need to do to be able to use `"dplyr"` and 
+`"ggplot2"`, is to install them in your computer. Now, because we are using the 
+jupyterhub server, these packages have already been installed there.
+
+Assuming that `"dplyr"` and `"ggplot2"` are already installed, the next thing
+to do is to __load__ them in your working session by invoking the `library()` 
+function:
+
+```{r eval=FALSE}
+# (you should include this command in your source file)
+library(dplyr)
+library(ggplot2)
+```
+
+__About loading packages:__ Another rule to keep in mind is to always load any 
+required packages at the very top of your script files (`.R` or `.Rmd` or 
+`.Rnw` files). Avoid calling the `library()` function in the middle of a script. 
+Instead, load all the packages before anything else.
+
+Because packages `"dplyr"` and `"ggplot2"` have many functions, we recommend
+that you take a look at these cheatsheets:
+
+- dplyr cheatsheet: https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf
+
+- ggplot2 cheathseet: https://rstudio.com/wp-content/uploads/2016/11/ggplot2-cheatsheet-2.1.pdf
+
+
+-----
+
+## Atlantic Hurricane Data
+
+The package `"dplyr"` contains a dataset called `storms` 
+which is a subset of the _NOAA Atlantic hurricane database best track data_.
+This database is one of several data sets available in the National Hurricane 
+Center (NHC) Data Archive, which is part of the National Oceanic and Atmospheric 
+Administration (NOAA). In case you are curious about the specifications and 
+format of this type of data, you can visit the following link:
+
+<a href="http://www.nhc.noaa.gov/data/#hurdat" target="_blank">http://www.nhc.noaa.gov/data/#hurdat</a>
+
+The data `storms` includes the positions and attributes of 198 tropical storms, 
+measured every six hours during the lifetime of a storm. When you type the name 
+of the data object, you whould get something like this:
+
+```{r}
+storms
+```
+
+What's going on in the above output?
+
+- `storms` is a __tibble__ object, which is one of the data objects in R that 
+handles data in tabular format. 
+
+- tibbles are not a native R object---they come from the homonym package 
+`"tibble"`---instead they are a modern version of data frames
+
+The way tibbles are _printed_ is very interesting. 
+
+- the number of rows that are displayed is limited to 10; 
+
+- depending on the width of the printing space, you will only see a few columns 
+shown to fit such width. 
+
+- underneath the name of each column there is a three letter abbreviation 
+inside angle brackets
+
+- this abbreviation indicates the _data type_ used by R to store the values. For 
+  + `<chr>` stands for _character_ data
+  + `<dbl>` means _double_ (i.e. real numbers or numbers with decimal digits)
+  + `<int>` means _integer_ (numbers with no decimal digits)
+  + `<ord>` indicates an _ordinal_ `factor` which is how R handles categorical
+  data
+
+
+
+### Your Turn
+
+You can find a more technical description of `storms` by taking a peek at its 
+manual (or help) documentation. All you need to do is run this command:
+
+```{r eval = FALSE}
+?storms
+```
+
+Take a look at the manual (or _help_) documentation and find the description 
+of the variables in data `storms`
+
+
+-----
+
+## Exploratory Data Analysis
+
+Exploring data is very similar to when you go to the doctor and they do an 
+initial exploration (e.g. measuring your height, your weight, temperature, 
+blood pressure; listenning to your heart and lungs; looking at your eyes, 
+throat, ears; asking you questions about your eating habits, physical activity 
+habits, etc).
+
+To perform an exploratory analysis of data that is tabular format, we typically
+start by inspecting each variable (each column) at a time.
+To keep things relatively simple, we won't perform a full exploration of every 
+single variable in the data. However, we encourage you to play with the 
+functions to go beyond what we cover in this module. In real life, you will 
+have to do such exploration.
+
+
+### Basic Inspection of `year`
+
+When you type `storms`, R displays the first 10 rows, which belong to storm
+Amy in 1975:
+
+```{r}
+storms
+```
+
+From this output, we know that the data contains at least one storm from 1975. 
+We also know, from the manual documentation of `storms`, that there 
+are supposed to be 198 storms. But we don't know for what years. So in a more 
+or less arbitrary way, let's begin inspecting `storms` by focusing on column 
+`year`. Our first exploratory question is: 
+
+> __What years have the data been collected for?__
+
+There are several ways in R to manipulate a column from a tabular object. Using 
+`"dplyr"`, there are two basic kinds of functions to extract variables: 
+`pull()` and `select()`.
+
+```{r fig.cap='Extracting a column with dplyr functions "pull" and "select"', echo = FALSE, out.width='65%'}
+knitr::include_graphics("https://www.gastonsanchez.com/intro2cwd/images/eda/dplyr-extract-column.svg")
+```
+
+Let's do a sanity check of years. We can use the function `pull()` that _pulls_
+or extracts an entire column. Because there are 10010 elements in 
+`years`, let's also use `unique()` to find out the set of year values in the
+data. First we pull the year, and then we identify unique occurrences:
+
+```{r}
+unique(pull(storms, year))
+```
+
+The same can be accomplished with `select()`. The difference with `pull()` is 
+in the way the output is handled by `select()`, which returns output in a table
+format:
+
+```{r}
+unique(select(storms, year))
+```
+
+Based on the previous answers, we can see that `storms` has records during 
+a 41-year period since 1975 to 2015.
+
+
+### Barplot of `year` values
+
+Let's keep using the values in column `year` to obtain our first visualization 
+with `"ggplot2"` functions. You could certainly begin a visual exploration of 
+other variables, but we think `year` is a good place to start because it's a 
+numeric variable, measured on a discrete scale, and this is a good candidate 
+to use barcharts (the most popular type of graphic).
+
+`"ggplot2"` comes with a large number of functions to create almost any 
+type of chart. Luckily for us, it already comes with predefined
+functions to graph barcharts. The syntax may seem a bit scary for beginners, 
+but you will see that it follows a logical structure. Here's the code to make
+a barplot of values in `year`:
+
+```{r}
+# barchart of year values
+ggplot(data = storms) + 
+  geom_bar(aes(x = year))
+```
+
+How does the previous command work? 
+
+- First, we always call the `ggplot()` function, typically indicating the name 
+of the table to be used with the `data` argument. 
+
+- Then, we add more components, or __layers__, using the plus `+` operator. 
+
+- In this case we are adding just one layer: a `geom_bar()` component which is 
+the geometric object for bars. 
+
+- To tell `ggplot()` that `year` is the column in `data = storms` to be used for
+the x-axis, we __map__ `x = year` inside the `aes()` function which stands for 
+_aesthetic_ mapping. 
+
+We should clarify that the meaning of "aesthetic" as used by `"ggplot2"` does 
+not mean beautiful or pretty, instead it conserves its etimological
+meaning of _perception_. Simply put, `aes()` is the function that you use to 
+tell `ggplot()` which variables of a `data` object will be mapped as visual
+attributes of graphical elements.
+
+
+
+
+
+
+
+### Your Turn
+
+- Use `pull()`, `select()`, and `unique()` to inspect the values in column 
+`month`
+
+- Try to use `sort()` in order to arrange the unique values of `month`
+
+- Does the unique month values make sense? Are there months for which there 
+seem to be no recorded storm data?
+
+- Use `"ggplot2"` functions to graph a barchart for the values in column 
+`month`.
+
+- Look at the cheatsheet for ggplot and locate the information for `geom_bar()`.
+Find out how to specify: border `color`, `fill` color. Also, see what happens
+when you specify `alpha = 0.5`.
+
+- Look at the cheatsheet for ggplot and locate the information for background 
+_Themes_, e.g. `theme_bw()`. Find out how to add theme `theme_classic()` to the 
+previous barchart.
+
+- Look at the cheatsheet for ggplot and locate the information for _Labels_. 
+Find out how to add a title with `ggtitle()` as well as with `labs()` to one
+of your previous barcharts.
+
+- Create a barchart of `month` values. Does the plot make sense?
+
+
+-----
+
+## Basic inspection of storms in 1975
+
+Let's focus on those storms recorded in 1975. How do we select them? 
+Computationally, this operation incolves a logical condition: `year == 1975`.
+This condition means that, from all the available year values, we get those 
+that match 1975. This is done via `"dplyr"` function `filter()`
+
+```{r fig.cap='Extracting a row with dplyr function "filter"', echo = FALSE, out.width='40%'}
+knitr::include_graphics("https://www.gastonsanchez.com/intro2cwd/images/eda/dplyr-filter.svg")
+```
+
+First, let's create a subset `storms75` by _filtering_ those rows with `year`
+equal to 1975:
+
+```{r}
+storms75 <- filter(storms, year == 1975)
+storms75
+```
+
+Once we have the set of storms that occurred in 1975, one possible question 
+to ask is what `unique()` storms happened in that year:
+
+```{r}
+unique(pull(storms75, name))
+```
+
+From the returned output, there are only three unique storms recorded in 1975.
+
+A similar result can be obtained with `distinct()`, the difference being the
+way in which the output is returned, in this case under the format of a tibble:
+
+```{r}
+distinct(storms75, name)
+```
+
+Now that we know there are three storms for 1975, it would be nice to count
+the number of rows or records for each of them. `"dplyr"` allows us to do this
+with `count()`, passing the name of the table, and then the name of the column
+for which we want to get the counts or frequencies:
+
+```{r}
+count(storms75, name)
+```
+
+
+### Visual displays on 1975 storms
+
+Let's play a bit with those storms from 1975. More specifically, let's visually 
+explore the values of columns `wind` and `pressure`.
+
+```{r}
+storms75
+```
+
+What type of visual display can we use to graph `wind` speed? The answer to 
+this question is based by determining which type of variable `wind` is. 
+You would agree with us in saying that `wind` is a quantitative variable. So
+one graphing option can be either a histogram or a boxplot, which are 
+statistical charts to visualize the distribution of quantitative variables.
+
+So let's use `geom_histogram()` and see what we get. We are going to show you 
+a synatx of `ggplot()` slightly different from the one we used for the barcharts.
+Carefully review the following code:
+
+```{r}
+ggplot(data = storms75, aes(x = wind)) +
+  geom_histogram()
+```
+
+You should notice now that `aes()` is an argument of `ggplot()`, and not anymore 
+an argument of the geometric-object function `geom_histogram()`. While this 
+may be a bit confusing when learning about `"ggplot2"`, it is a very flexible
+and powerful behavior of `aes()`. Again, the important part of `aes()` is to
+understand that this function allows you to tell `ggplot()` which variables
+in your `data` table are used as visual attributes of the corresponding 
+geometric elements forming the plot.
+
+We can change the default argument `binwidth` to get another version of the 
+histogram, for example a bin-width of 5 units (i.e. width of 5 knots):
+
+```{r}
+ggplot(data = storms75, aes(x = wind)) +
+  geom_histogram(binwidth = 5)
+```
+
+or a bin-width of 10:
+
+```{r}
+ggplot(data = storms75, aes(x = wind)) +
+  geom_histogram(binwidth = 10)
+```
+
+Now, let's reflect on what's going on in each of the histograms. Do they make
+sense? How do we interpret each figure?
+
+While `ggplot()` does what we ask it to do, the displays may not be the most 
+useful, or meaningful. Why? Think what exactly it is that we are plotting. 
+In 1975, there are three storms: 
+
+```{r}
+unique(pull(storms75, name))
+```
+
+But the histograms are not differentiating between any of those three storms.
+Rather, the visualization is just giving us a general view of the `wind` values,
+from the low 20's to the high 90's, or to be more precise:
+
+```{r}
+summary(pull(storms75, wind))
+```
+
+However, we don't really know if all three storms have the same minimum `wind`
+speed, or the same maximum `wind` speed. The good news is that we can tell
+`ggplot()` to take into account each different storm name. But now let's use
+boxplots via `geom_boxplot()`, mapping `name` to the x-axis, and `wind` to the y-axis.
+
+```{r}
+ggplot(data = storms75, aes(x = name, y = wind)) +
+  geom_boxplot()
+```
+
+Note how different the distribution of wind speed is in each storm. We can get
+an alternative plot with density curves thanks to the `geom_density()` function.
+The syntax in this case is different. Let's first do it without separating 
+storms, and then we do it taking into account the storm names.
+
+Here's the command that plots a density curve of wind, without distinguishing 
+between storms. Observe also how the argument `fill` is _set_ to color `'gray'`:
+
+```{r}
+ggplot(data = storms75, aes(x = wind)) +
+  geom_density(fill = 'gray')
+```
+
+As you can tell, the density curve looks like the profile of a roller coaster,
+or like the silhouette of three mountain peaks. Is this a pattern followed 
+by wind speed in all storms? Or is it just an artifact due to the fact that we 
+are plotting data without taking into consideration the context of `storms75`?
+
+Let's replot density of wind, but now distinguishing between each storm. We 
+do this by mapping `name` to the `color` argument:
+
+```{r}
+ggplot(data = storms75, aes(x = wind, color = name)) +
+  geom_density(aes(fill = name))
+```
+
+Aha! Now things look more interesting: the roller coast shape of the first call 
+to `geom_density()` turned out to be an artificial pattern. As you can tell 
+from the above plot, each storm has its own different density curve.
+
+To get a better visualization, we can take the previous command and add a bit 
+of transparency to the colors, this is done with the argument `alpha` inside 
+`geom_density()`. Note how arguments are specified inside `geom_density()`:
+we __map__ `name` to the color-fill attribute of the curve inside `aes()`, but 
+we __set__ `alpha = 0.5` outside `aes()`:
+
+```{r}
+ggplot(data = storms75, aes(x = wind, color = name)) +
+  geom_density(aes(fill = name), alpha = 0.5)
+```
+
+We are going to take advantage of this graphic to introduce another cool 
+feature of `"ggplot2"` that allows us to split data based on categorical or
+discrete variables, in order to produce separated frames called __facets__. 
+Here's the command previous command---wihtout `alpha` transparency---adding a 
+new layer given by `facet_wrap()`:
+
+```{r}
+ggplot(data = storms75, aes(x = wind, color = name)) +
+  geom_density(aes(fill = name)) + 
+  facet_wrap(~ name)
+```
+
+In this command we are faceting by `name`, and what this does is to create 
+facets, one for each category of `name`. In other words, we get separated 
+density curves, one for each storm. The syntax inside `facet_wrap()` uses the
+tilde `~` operator which is the _formula_ operator in R. Basically, the command 
+`~ name` tells `ggplot()` to create facets based on the values of `name`.
+
+
+-----
+
+
+### Visual Inspection of Storm Amy (1975)
+
+Let's focus on storm `Amy` in 1975, subsetting `storms75` to filter out just 
+the rows of Amy into its own table
+
+```{r}
+amy75 <- filter(storms75, name == "Amy")
+amy75
+```
+
+Let's keep exploring `wind` but now let's do it chronologically, that is, 
+graphing the wind values in the order that they were recorded (recall storms 
+are tracked every six hours). 
+
+We begin with a scatterplot using `geom_point()`,
+and we specify that the x-axis should use a numeric sequence `1:nrow(amy75)`
+from the first row till the last row of `amy75`, and `wind` for y-axis:
+
+```{r}
+ggplot(data = amy75, aes(x = 1:nrow(amy75), y = wind)) +
+  geom_point()
+```
+
+Becasue the x-axis denotes progression over time, we can connect the dots
+with a line. A simple way to do this is by adding another layer to our plot,
+this time with `geom_line()`
+
+```{r}
+ggplot(data = amy75, aes(x = 1:nrow(amy75), y = wind)) +
+  geom_point() + 
+  geom_line()
+```
+
+As you can tell, Amy started to being recorded with wind speed of 25 knots, and
+then after (7 x 6) = hours, its speed kept increasing to 30, 35, 40, and so on
+until reaching its maximum speed of 60 knots that lasted 54 hours (9 x 6).
+
+At this point, we can ask about the `status` of Amy along its lifetime. One 
+option is to map `status` to the `color` attribute of points:
+
+```{r}
+ggplot(data = amy75, aes(x = 1:nrow(amy75), y = wind)) +
+  geom_point(aes(color = status)) + 
+  geom_line()
+```
+
+We see that Amy started as a tropical depression, and then became a tropical
+storm, but never became a hurricane. For a storm to reach hurricane status, of category 1, it must have one-minute maximum sustained winds of at least  64 kn
+(33 m/s; 74 mph; 119 km/h).
+
+What about the pressure values of Amy? We can produce a similar scatterplot 
+with a line connecting the dots:
+
+```{r}
+ggplot(data = amy75, aes(x = 1:nrow(amy75), y = pressure)) +
+  geom_point(aes(color = status)) + 
+  geom_line()
+```
+
+As an exploratory exercise, we can also play with the size of points, the 
+size (width) of lines, colors, etc. Here's one suggestion graphing `pressure`
+and taking into account the `wind` speed reflected in the size of points and
+line segments:
+
+```{r}
+ggplot(data = amy75, aes(x = 1:nrow(amy75), y = pressure)) +
+  geom_line(aes(size = wind), lineend = "round", color = 'gray70') +
+  geom_point(aes(size = wind, color = status))
+```
+
+If you know a little bit about storms, you know there's actually an association 
+between `wind` and `pressure`. But let's pretend for a second that we don't 
+know much about tropical storms, hurricanes, and things like that. By looking
+at the previous chart, this should allows us to guess that something is going 
+on between the `pressure` of a storm and its `wind` speed. As Amy becomes 
+stronger, with higher winds, its pressure levels drop accordingly, suggesting
+a negative correlation, which is confirmed when we compute this statistic:
+
+```{r}
+summarise(amy75, cor(wind, pressure))
+```
+
+-----
+
+### Your Turn
+
+- Repeat the previous exploratory steps but now with storms from year 1980.
+
+- Try to find out how to specify a logical condition to filter various years: 
+for example, storms from years 1975, 1976, and 1977.
+
+- Try to find out how to specify a logical condition to filter storms from 
+year 1975 with `wind` values less than 100.
+
+- Use `"dplyr"` functions/commands to create a table (e.g. tibble) 
+`storm_names_1980s` containing the name and year of storms recorded during the 
+1980s (i.e. from 1980 to 1989).
+
+- Create boxplots of pressure, for storms in 1980. You can also try 
+graphing _violins_ (`geom_violin()`) instead of boxplots (`geom_boxplot()`).
+
+- Use `"ggplot2"` functions to make a single scatterplot of `wind` and 
+`pressure` for all storms. Use `category` to add color to the dots.
+
+- Use `"ggplot2"` functions to make a scatterplot of `wind` and `pressure` 
+for all storms, facetting by month, and using `category` to differentiate by 
+color.
+
+- Use `"ggplot2"` functions to make a scatterplot of `wind` and `pressure` 
+for all storms, but now create facets based on `month`. Feel free to add 
+some amount of `alpha` transparency to the color of dots.
