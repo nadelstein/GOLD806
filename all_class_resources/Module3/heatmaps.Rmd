@@ -1,0 +1,415 @@
+---
+title: "Heatmaps"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(reshape2)
+```
+
+Required packages
+
+```{r eval = FALSE}
+library(ggplot2)
+library(reshape2)
+```
+
+
+
+
+## 1) What ia a heatmap?
+
+A heat map (or heatmap) is a literal way of visualizing a table of numbers, where 
+you substitute the numbers with colored cells. In other words, a heatmap is a 
+graphical representation of data where values are depicted by color. 
+
+Why heatmaps are popular?
+
+- They make it easy to visualize tabular data and understand it at a glance.
+It's useful for finding highs and lows and sometimes, patterns.
+
+- The idea is to take advantage of the human color vision to detect/observe
+patterns that otherwise are very difficult to uncover just by looking at the
+numeric values in a table.
+
+- Because heatmaps encode numbers with colors, the visual display can be very 
+colorful, which if plotted following good design principles, is pleasent to 
+
+
+### 1.1) Why are they called heatmaps?
+
+As mentioned above, when using a heatmap, numerical data gets graphically 
+represented in a way that the value of each data point is indicated using colors. 
+The most commonly used color scheme used in heatmap visualization is the 
+__warm-to-cool color scheme__, with the warm colors representing 
+high-value data points and the cool colors representing low-value data points.
+Hence the reason for the name _heatmap_.
+
+
+
+
+## 2) Intuition of heatmaps
+
+```{r Xmatrix, echo = FALSE}
+num_rows = 4
+num_cols = 3
+num_total = num_rows * num_cols
+
+X = matrix(1:num_total, nrow = num_rows, ncol = num_cols)
+rownames(X) = paste0("row", 1:num_rows)
+colnames(X) = paste0("col", 1:num_cols)
+```
+
+Let us start by describing the graphing steps behind a heatmap. To do this, 
+consider the following matrix `X` 
+
+```{r echo = FALSE, comment = ""}
+X
+```
+
+As you can tell, `X` is of size $`r num_rows` \times `r num_cols`$, that is, 
+it has `r num_rows` rows and `r num_cols` columns, for a total of `r num_total`
+entries (or cells). To create this matrix in R, use the following code:
+
+```{r Xmatrix}
+```
+
+For visualization purposes, we could take the numeric values in the entries
+of `X`, and map them to different colors. For example, we could map a value 
+of 1 to color "blue", 2 to "turquoise", 3 to "green"`, etc. And then, graph
+the data in `X` as an image in which each entry is plotted with its respective
+assigned color.
+
+As an example, we use the `rainbow()` function that creates a ramp pallete
+with as many colors as the indicated input number.
+
+```{r}
+some_colors <- rainbow(num_total)
+X_colors <- matrix(some_colors, nrow = num_rows, ncol = num_cols)
+dimnames(X_colors) <- dimnames(X)
+X_colors
+```
+
+The basic idea of a heatmap is to plot a rectangular grid, with each cell colored 
+according to the mapped value, something like the following diagram
+
+```{r echo = FALSE, fig.align='center', , out.width='70%'}
+mycols <- c(
+  X_colors[4,],
+  X_colors[3,],
+  X_colors[2,],
+  X_colors[1,])
+
+xcols = rep(1:num_cols, times = num_rows)
+yrows = rep(1:num_rows, each = num_cols)
+plot(xcols, yrows, axes = FALSE, type = "n",
+     xlim = c(0.5,3.5), ylim = c(1,4.5))
+axis(side = 2, at = 1:num_rows, labels = num_rows:1, las = 1)
+axis(side = 3, at = 1:num_cols, labels = 1:num_cols)
+symbols(xcols, yrows, squares = rep(0.1, num_total), 
+        inches = FALSE, add = TRUE, bg = mycols)
+```
+
+In fact, a proper heatmap will look like the following graph:
+
+```{r echo = FALSE, fig.align='center', out.width='50%'}
+Y = rbind(X[4,], X[3,], X[2,], X[1,])
+heatmap(Y, Rowv = NA, Colv = NA, scale = "none", col = X_colors,
+        labRow = rev(rownames(X)))
+```
+
+
+R provides the function `heatmap()`, that creates default heatmaps. Now,
+keep in mind that the default order in which rows and columns are organized by
+`heatmap()` differs from the above example. Turning off arguments `Rowv`, `Colv`,
+and `scale`, we get the following image:
+
+```{r fig.align='center', out.width='50%'}
+heatmap(X, Rowv = NA, Colv = NA, scale = "none", col = X_colors)
+```
+
+It is the same data, the difference in the heatmaps has to do with the order 
+of the rows.
+
+Because data values are transformed to color scale, a heatmap is said to be a 
+"false colored image".
+
+
+
+## 3) Plotting heatmaps with R
+
+There are a multiple numbers of R packages and functions for drawing interactive 
+and static heatmaps, including:
+
+- `heatmap()` from `"base"` packages: Draws a simple heatmap
+
+- `heatmap.2()` from "gplots"` package: Draws an enhanced heatmap compared to 
+the R base function.
+
+- `pheatmap()` from `"pheatmap": Draws pretty heatmaps and provides more control 
+to change the appearance of heatmaps.
+
+- `Heatmap()` from `"ComplexHeatmap"` R/Bioconductor package: Draws, annotates 
+and arranges complex heatmaps (very useful for genomic data analysis)
+
+- and many more.
+
+We will only cover the `heatmap()` and `heatmap.2()` functions in this tutorial.
+
+
+### 3.1) Example in R
+
+Let's use the data frame `mtcars`. First we order values by `mpg` (miles per gallon)
+
+```{r}
+dat <- mtcars[order(mtcars$mpg), ]
+head(dat, n = 5)
+```
+
+The data is in data frame format, but it has to be a data matrix to make a 
+heatmap
+
+```{r}
+dat_matrix <- data.matrix(dat)
+class(dat_matrix)
+```
+
+Once the data is in matrix form, we can use the function `heatmap()` as
+follows. The main input is the data (matrix). In the code below we use the 
+arguments `Rowv = NA` and `Colv = NA` to display a heatmap without clustering
+the rows and columns. In addition, we scecify that the data should be scaled 
+taking into account the columns (i.e. the variables). This scaling or normalizing
+operation transforms each column in a way that they have mean zero and unit 
+standard deviation (i.e. standardized data)
+
+```{r out.width='80%', fig.align='center'}
+nba_heatmap <- heatmap(
+  dat_matrix, 
+  Rowv = NA, 
+  Colv = NA, 
+  #col = cm.colors(256), 
+  scale = "column", 
+  margins = c(5,10))
+```
+
+
+#### Changing Colors
+
+You can change the color scheme with the argument `col`. For example, we can
+choose a _cyam-magenta_ palette with `cm.colors()`
+
+```{r out.width='80%', fig.align='center'}
+nba_heatmap <- heatmap(
+  dat_matrix, 
+  Rowv = NA, 
+  Colv = NA, 
+  col = cm.colors(256), 
+  scale = "column", 
+  margins = c(5,10))
+```
+
+Maybe you want a different color scheme. For example, you could use 
+more heat-looking colors with `heat.colors()`:
+
+```{r out.width='80%', fig.align='center'}
+nba_heatmap <- heatmap(
+  dat_matrix, 
+  Rowv=NA, 
+  Colv=NA, 
+  col = heat.colors(256), 
+  scale = "column", 
+  margins=c(5,10))
+```
+
+
+### 3.2) Basic heatmap with `"ggplot2"`
+
+What about graphing heatmaps with `"ggplot2"`? Although this package does not
+have a dedicated `heatmap()`-like function, it is possible to graph basic 
+heatmaps with the geometric object function `geom_tile()`.
+
+In this part of the tutorial you need to load the following packages
+
+```{r eval = FALSE}
+library(ggplot2)    # for graphics
+library(reshape2)   # for data reshaping
+```
+
+THe graphing process of heatmaps with `"ggplot2"` is not straightforward as
+with base `heatmap()`. One thing to remember is that `ggplot()` expects to 
+receive a data frame as its main input. The good news is that `mtcars` is 
+already in data frame format. The bad news is that we need to do some data 
+reshaping (wrangling). This is where `:reshape2"` comes very handy.
+
+First we need to `melt()` the data frame. For convenience purposes, we will 
+create a "copy" of `mtcars`, and then play with our copy instead of directly
+modifying `mtcars`:
+
+```{r}
+dat_cars <- mtcars
+dat_cars$car <- rownames(mtcars)
+dat_melt <- melt(dat_cars)
+```
+
+Once its melted, we can use `geom_tile()`
+
+```{r out.width='80%', fig.align='center'}
+ggplot(data = dat_melt, aes(x = variable, y = car, fill = value)) +
+  geom_tile()
+```
+
+
+#### Scaling Variables
+
+The variables with the largest variance will dominate the scale. To avoid 
+this phenomenon, it is typical to transform variables into comparable units
+
+```{r}
+mtcars_scaled <- as.data.frame(scale(mtcars))
+mtcars_scaled$car <- rownames(mtcars_scaled)
+dat_melt <- melt(mtcars_scaled)
+head(dat_melt)
+```
+
+Let's replot the heatmap
+
+```{r out.width='80%', fig.align='center'}
+ggplot(data = dat_melt, aes(x = variable, y = car, fill = value)) +
+  geom_tile()
+```
+
+Let's now try a different color palette
+
+```{r out.width='80%', fig.align='center'}
+ggplot(data = dat_melt, aes(x = variable, y = car, fill = value)) +
+  geom_tile() +
+  scale_fill_distiller(palette = 'PiYG')
+```
+
+Here's another option
+
+```{r out.width='80%', fig.align='center'}
+ggplot(data = dat_melt, aes(x = variable, y = car, fill = value)) +
+  geom_tile() +
+  scale_fill_distiller(palette = 'Spectral')
+```
+
+We can try another scaling option such as the _minmax_ which converts any
+scale into a 0-1 range:
+
+```{r}
+minmax <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+mt_min <- apply(mtcars, 2, min)
+mt_max <- apply(mtcars, 2, max)
+mt_range <- mt_max - mt_min
+
+dat_min_centered <- sweep(mtcars, MARGIN = 2, STATS = mt_min, FUN = "-")
+dat_minmax <- sweep(dat_min_centered, MARGIN = 2, STATS = mt_range, FUN = "/")
+
+# confirming minmax scale
+apply(dat_minmax, 2, min)
+apply(dat_minmax, 2, max)
+```
+
+```{r}
+dat_minmax$car <- rownames(mtcars)
+dat_melt <- melt(dat_minmax)
+head(dat_melt)
+```
+
+```{r out.width='80%', fig.align='center'}
+ggplot(data = dat_melt, aes(x = variable, y = car, fill = value)) +
+  geom_tile() +
+  scale_fill_distiller(palette = 'PiYG')
+```
+
+
+
+
+## Clustered Heatmaps
+
+Instead of having the horizontal axis represent levels or values of a single 
+variable, it is a common variation to have it represent measurements of 
+different variables or metrics. If we set the vertical axis as individual 
+observations, we end up with something resembling a standard data table, where 
+each row is an observation and the columns the entity’s value on each measured 
+variable.
+
+This type of heatmap is sometimes known as a clustered or clustering heatmap, 
+since the goal of this kind of chart is to build associations between both the 
+data points and their features. We want to see which individuals are similar or 
+different from each other, with a similar objective for variables. Analysis 
+tools that construct this type of heatmap will usually implement clustering as 
+part of their process. This use case is found in areas like the biological 
+sciences, such as when studying similarities in gene expression across individuals.
+
+Heat maps allow us to simultaneously visualize clusters of samples and features. 
+First hierarchical clustering is done of both the rows and the columns of the 
+data matrix. The columns/rows of the data matrix are re-ordered according to 
+the hierarchical clustering result, putting similar observations close to each 
+other. The blocks of "high" and "low" values are adjacent in the data matrix. 
+Finally, a color scheme is applied for the visualization and the data matrix is 
+displayed. Visualizing the data matrix in this way can help to find the 
+variables that appear to be characteristic for each sample cluster.
+
+
+
+
+## Examples with `mtcars`
+
+Basic example
+
+```{r out.width='80%', fig.align='center'}
+dat <- scale(mtcars)
+
+# scaling data by rows
+heatmap(dat, scale = "row")
+```
+
+The arguments are
+
+- `dat` is a numeric matrix
+
+- `scale` a character indicating if the values should be centered and scaled in 
+either the row direction or the column direction, or none. Allowed values are 
+in `c("row", "column", "none")`. Default is `"row"`.
+
+In the plot above, high values are in red and low values are in yellow.
+
+
+```{r out.width='80%', fig.align='center'}
+# scaling data by colums
+heatmap(dat, scale = "column")
+```
+
+
+It's possible to specify a color palette using the argument col, which can be 
+defined as follow:
+
+Using custom colors:
+
+```{r}
+# red, white, blue
+rwb <- colorRampPalette(c("red", "white", "blue"))(256)
+
+heatmap(dat, scale = "row", col = rwb)
+```
+
+
+### Enhanced heatmaps with `heatmap.2()`
+
+The function `heatmap.2()` [in `"gplots"` package] provides many extensions to 
+the standard R `heatmap()` function presented in the previous section.
+
+```{r}
+# install.packages("gplots")
+library("gplots")
+heatmap.2(dat, scale = "none", col = rwb, 
+          trace = "none", density.info = "none")
+```
+
