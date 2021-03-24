@@ -1,0 +1,707 @@
+---
+title: "Principal Components Analysis (PCA)"
+author: Gaston Sanchez
+date: EDSS - SFSU
+output: 
+  beamer_presentation:
+    includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(FactoMineR)
+```
+
+# About
+
+In this slides, we provide a high-level intuition of Principal Components 
+Analysis (PCA).
+
+The idea is to get a feeling of what the notion of low-dimensional representation
+of a data set means.
+
+### Packages
+
+\scriptsize
+```{r eval = FALSE}
+# mandatory package
+library(FactoMineR)
+
+# recommended packages
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+```
+
+-----
+
+# Decathlon Events
+
+```{r out.width='99%', echo = FALSE, fig.align='center'}
+knitr::include_graphics('decathlon-icons.pdf')
+```
+
+-----
+
+# Dataset Decathlon
+
+- `decathlon` data, from R package `"FactoMineR"`
+
+- 41 athletes, 13 variables containing 10 events
+    - `100m`
+    - `Long.jump`
+    - `Shot.put`
+    - `High.jump`
+    - `400m`
+    - `110m.hurdle`
+    - `Discus`
+    - `Pole.vault`
+    - `Javeline`
+    - `1500m`
+
+- involving 2 competitions (2004 Olympic Game or 2004 Decastar)
+
+-----
+
+\footnotesize
+```{r}
+data(decathlon)
+
+# decathlon events (ignore 3 last columns)
+dat <- decathlon[ ,1:10]
+```
+
+```{r echo = FALSE, comment = ""}
+print(dat[1:5,1:5], print.gap = 2)
+```
+
+```{r echo = FALSE, comment = ""}
+print(dat[1:5,6:10], print.gap = 2)
+```
+
+-----
+
+# Exploratory Data Analysis (EDA)
+
+We can explore variables at different stages:
+
+- Univariate: one variable at a time
+
+- Bivariate: two variables simultaneously
+ 
+- Multivariate: multiple variables
+
+-----
+
+# Multivariate EDA: Objects and Variables Perspectives
+
+## Data Perspectives
+
+From a multivariate point of view, we are interested in analyzing a data set 
+from both perspectives: __objects__ and __variables__
+
+
+## 2 Overall Goals
+
+At its simplest we are interested in 2 fundamental purposes:
+
+- Study __resemblance among individuals__: resemblance among athletes
+
+- Study __relationship among variables__: relationship among events statistics
+
+-----
+
+# Stars or Glyphs plot
+
+```{r stars, echo = FALSE, fig.align = "center", out.width='95%'}
+# stars plot for looking at individuals
+stars(dat, nrow = 5, key.loc = c(17,1.5))
+```
+
+-----
+
+# Correlation heatmap
+
+```{r cormat, echo = FALSE, fig.align = "center", out.width='75%'}
+# correlation heatmap
+cormat <- cor(dat)
+cormat[upper.tri(cormat)] <- NA
+cormat_melt <- melt(cormat, na.rm = TRUE)
+ggplot(data = cormat_melt, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "red", high = "blue", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()
+```
+
+-----
+
+```{r pairs, echo = FALSE, fig.align = "center", out.width='95%'}
+# scatterplot matrix
+pairs(dat, pch = 19, col = "#50505080")
+```
+
+-----
+
+# R Code for previous graphics
+
+\scriptsize
+
+```{r stars, eval = FALSE}
+```
+
+```{r cormat, eval = FALSE}
+```
+
+```{r pairs, eval = FALSE}
+```
+
+-----
+
+# EDA so far ...
+
+With the three previous graphics, we can get an idea of what's going on with
+certain (dis)similarities between the individuals, as well as certain
+relationships among the variables. 
+
+But none of these plots provide a larger "panoramic" view of the data. 
+
+Also, keep in mind that a stars plot is good for small data sets, but it doesn't
+scale well with a large number of individuals.
+
+Likewise, each of the scatterplots (and their associated correlations) gives an 
+isolated 2-dimensional picture. Although together they seem to provide a rich
+view of the data, it is a highly compartmentalized view.
+
+-----
+
+\Large
+What if we could get a better low-dimensional summary of the data?
+
+\normalsize
+- e.g. a more informative scatterplot
+
+- e.g. a comprehensive view of relationships among variables
+
+-----
+
+## What if we could get a more informative scatterplot?
+
+```{r pc_plot_inds, echo = FALSE, fig.align = "center", out.width='80%'}
+# pca plot of individuals
+pca <- PCA(X = dat, scale.unit = TRUE, ncp = 10, graph = FALSE)
+plot(pca, choix = "ind", title = "")
+```
+
+-----
+
+## Or a "radar" view of the variables?
+
+```{r pc_plot_vars1, echo = FALSE, fig.align = "center", out.width='70%'}
+# pca plot of variables
+plot(pca, choix = "var", title = "")
+```
+
+-----
+
+# About PCA
+
+Principal Components Analysis (PCA) is a multivariate method that allows us 
+__to study and explore__ a set of quantitative variables measured on some objects.
+
+## Core Idea
+
+With PCA we seek to __reduce the dimensionality__ (condense information in 
+variables) of a data set while retaining as much as possible of the variation present in the data
+
+-----
+
+PCA: Overall Goals
+
+- Summarize a data set with the help of a small number of synthetic variables 
+  (i.e. the Principal Components).
+
+- Visualize the position (resemblance) of individuals.
+
+- Visualize how variables are correlated.
+
+- Interpret the synthetic variables.
+
+----
+
+# Common PCA applications
+
+- Dimension Reduction
+
+- Visualization
+
+- Feature Extraction
+
+- Data Compression
+
+- Smoothing of Data
+
+- Detection of Outliers
+
+- Preliminary process for further analyses
+
+-----
+
+# Geometric Mindset
+
+One way to present PCA is based on a data visualization approach.
+
+To help you understand the main idea of PCA from a geometric standpoint, 
+I'd like to begin showing you my __mug-data__ example.
+
+-----
+
+# Imagine a data set in a "high-dimensional space"
+
+```{r fig.cap='Cloud of points in the form of a mug', echo = FALSE, out.width='50%'}
+knitr::include_graphics("mug-data.pdf")
+```
+
+-----
+
+# We are looking for Candidate Subspaces
+
+```{r echo = FALSE, out.width='85%', fig.align='center'}
+knitr::include_graphics("pca_geo_candidate_subspaces1.pdf")
+```
+
+-----
+
+# with the best low-dimensional representation
+
+```{r echo = FALSE, out.width='85%', fig.align='center'}
+knitr::include_graphics("pca_geo_candidate_subspaces2.pdf")
+```
+
+-----
+
+# Best low-dimensional projection
+
+```{r echo = FALSE, out.width='85%', fig.align='center'}
+knitr::include_graphics("pca_geo_candidate_subspaces3.pdf")
+```
+
+-----
+
+# Geometric Idea
+
+## Looking at the cloud of points
+
+Under a purely geometric approach, PCA aims to represent the cloud of points 
+into a space with reduced dimensionality (usually 2-dimensions) in an "optimal" way.
+
+By "optimal" we mean obtaining a low-dimensional representation of the data
+as less distorted as possible from the its original configuration.
+
+-----
+
+# What PCA is doing?
+
+A PC is obtained by combining the input $X$-variables in a way that 
+we maximize the "information" captured by the PC
+
+$$
+PC_k = v_{1,k} X_1 + v_{2,k} X_2 + \dots + v_{p,k} X_p
+$$
+
+such that $\max \{Var(PC_k)\}$
+
+- Think of a PC as a __weighted sum__ of the input $X$-variables. 
+- Each PC captures a __unique amount of information__ or variation about $X$-variables
+- $PC_1$ captures the largest amount of variation
+- $PC_2$ captures the second largets amount of variation
+- and so on
+
+-----
+
+# PCA in Practice
+
+## Considerations
+
+- PCA applies to a data table of quantitative (real-valued) variables
+
+- Decide if variables need to be normalized to a comparable scale
+
+- I will show you how to carry out PCA with the function `PCA()` from the 
+package `"FactoMineR"`
+
+-----
+
+# To standardize or not?
+
+- A key issue has to do with the scale of the variables.
+
+- If variables have different units of measurement, then we should standardize them
+  to avoid variables with larger scales dominate the analysis.
+
+- If variables have the same units:
+    + you could leave them unstandardized
+    + or you could standardize them (strongly suggested)
+
+Regardless of the scaling decision, we operate on "mean-centered data", 
+that is, variables that have zero mean.
+
+-----
+
+If you use the raw scales, the variable `1500m` will dominate the analysis due 
+to its larger scale.
+
+```{r boxplot_raw_vars, echo = FALSE, fig.align='center', out.width='80%'}
+boxplot(dat, range = 0, las = 1, main = "Raw values",
+        names = abbreviate(colnames(dat), 4))
+```
+
+-----
+
+By normalizing the variables (dividing by their standar deviations), they all 
+play the same role, and have comparable scales.
+
+```{r boxplot_std_vars, echo = FALSE, fig.align='center', out.width='80%'}
+boxplot(scale(dat), range = 0, las = 1, main = "Standardized values",
+        names = abbreviate(colnames(dat), 4))
+```
+
+-----
+
+# PCA with `"FactoMineR"`
+
+\footnotesize
+```{r eval = FALSE}
+# PCA() from FactoMineR
+pca <- PCA(dat)
+```
+
+\normalsize
+- the main input for `PCA()` is a data table (e.g. `matrix` or `data.frame`)
+
+- by default, `PCA()` standardizes all variables (zero mean, unit variance)
+
+
+-----
+
+# Output of `PCA()`
+
+\footnotesize
+```{r}
+names(pca)
+```
+
+\bigskip
+
+\normalsize
+`PCA()` produces an object of class `"PCA"` which is a list that contains:
+
+- `eig`: table of _eigenvalues_ containing the variances of the PCs
+- `var`: list of outputs for the variables
+- `ind`: list of outputs for the individuals (e.g. PCs)
+- `svd`: results from _singular value decomposition_
+
+-----
+
+# PCA Essetial Results
+
+The core results of a PCA consists of:
+
+- Principal Components (PCs) or Scores: new coordinates for the individuals;
+these are available in `pca$ind$coord`
+
+- Variance of PCs (how much variation each PC captures); these are available in 
+`pca$eig`
+
+- Loadings: how much each variable _weighs_ on the formation of the PCs;
+these are available in `pca$svd$V`
+  
+-----
+
+\Huge
+\hilit How many PCs to retain
+
+-----
+
+# How many PCs to retain?
+
+There are various ways to determine the number of PCs to be retained. The
+most common ones are:
+
+- Screeplot (see if there's an "elbow")
+
+- Predetermined amount of variation
+
+- Kaiser's rule
+
+-----
+
+# Table of Eigenvalues
+
+\scriptsize
+```{r eigs, comment = ""}
+# eigenvalues
+pca$eig
+```
+
+-----
+
+## Screeplot: look for an "elbow"
+
+\scriptsize
+```{r fig.align='center', out.width='70%'}
+eigs <- pca$eig
+plot(1:nrow(eigs), eigs[,1], las = 1, type = "n", 
+     ylab = "values", xlab = "number of components")
+lines(1:nrow(eigs), eigs[,1], lwd = 4, col = "gray70")
+points(1:nrow(eigs), eigs[,1], pch = 20, cex = 2.5, col = "#227099")
+```
+
+-----
+
+## Predetermined amount of variation
+
+One option to decide how many PCs to retain, consists of predefining a specified
+portion of variation: e.g. 70\%
+
+\bigskip
+
+\scriptsize
+```{r predefined, comment = ""}
+# 70% or more
+print(round(eigs[eigs[ ,3] <= 80, ], 4))
+```
+
+-----
+
+## Kaiser's Rule
+
+Another criterion to decide how many PCs to keep, is the so-called Kaiser's rule,
+which consists of retaining those PCs with eigenvalues $\lambda_k > 1$
+
+\bigskip
+
+\scriptsize
+```{r kaiser, comment = ""}
+# Kaiser criterion
+eigs[eigs[ ,1] > 1, ]
+```
+
+-----
+
+\Huge
+\hilit Studying the Individuals
+
+-----
+
+# Studying the Individuals
+
+When studying the individuals, we typically look at scatterplots of PCs
+
+\footnotesize
+```{r eval = FALSE}
+# scatterplot PC1 -vs- PC2
+plot(pca, choix = 'ind', axes = c(1, 2))
+```
+
+\normalsize
+Optionally, we could also look at:
+
+- Quality of representation: `pca$ind$cos2`
+ 
+- Individual Contributions to PCs: `pca$ind$contrib`
+
+-----
+
+```{r cloud_inds12, echo = FALSE, comment = "", fig.align='center', out.width='85%', fig.width=7, fig.height=5}
+plot(pca, choix = 'ind')
+```
+
+-----
+
+# Quality of Representation
+
+First 5 rows of $cos^2(i, PC_k)$ for $k = 1, 2, 3, 4$
+
+\footnotesize
+```{r cos2, comment = ""}
+# quality of positioning
+print(head(pca$ind$cos2, n = 5), digits = 3)
+```
+
+-----
+
+# Quality of Representation
+
+Adding the squared cosines over all principal axes for a given individual, we get:
+
+$$
+\sum_{PC_k} cos^2 (i, PC_k) = 1
+$$
+
+This sum provides, in percentages, the "quality" of the representation of an 
+individual on the subspace defined by the principal axes.
+
+\footnotesize
+```{r}
+# sum of squred-cosines for 1st athlete
+sum(pca$ind$cos2[1, ])
+```
+
+-----
+
+# Quality of Representation
+
+The squared cosine is used to evaluate the quality of the representation.
+
+On a given PC, some distances between individuals will be well represented, 
+while other distances will be highly distorted.
+
+You can add the squared cosines of an individual over different axes, resulting 
+in a quality measure of how well that individual is represented in that subspace.
+
+-----
+
+\Huge
+\hilit Study of cloud of Variables
+
+-----
+
+# Studying the Variables
+
+When studying the variables, we typically pay attention to:
+
+- Scatterplots of loadings (or some loading-based results)
+ 
+- Quality of representation of variables
+ 
+- Variables Contributions to PCs
+
+-----
+
+# Loadings
+
+\footnotesize
+```{r loadings_matrix, comment = ""}
+# first 4 vectors of loadings (associated to first 4 PCs)
+print(pca$svd$V[, 1:4], digits = 3)
+```
+
+-----
+
+The entries of a loadings-vector are the coefficients that produce a PC as
+a weighted sum; for example $PC_1$ is given by:
+
+\begin{align*}
+PC_1 &= (-0.4283) \texttt{100m} + (0.4102) \texttt{Long.jump} \\
+&+ (0.3441) \texttt{Shot.jump} + (0.3162) \texttt{High.jump} \\
+&+ (-0.3757) \texttt{400m} + (-0.4126) \texttt{110m.hurdle} \\
+&+ (0.3054) \texttt{Discus} + (0.0278) \texttt{Pole.vault} \\
+&+ (0.1532) \texttt{Javeline} + (-0.0321) \texttt{1500m}
+\end{align*}
+
+-----
+
+# Interpreting PCs
+
+- Because PCs are obtained by combinaning the input variables, we typically
+try to give PCs a meaningful interpretation
+
+- This interpretation can be very useful, but not always possible
+
+- You can look at the magnitude of the loadings
+
+- You can also look at the correlations between variables and PCs
+
+-----
+
+\scriptsize
+```{r comment = ""}
+# correlations between X-variables and PCs
+print(pca$var$coord[ ,1:4], digits = 4)
+```
+
+A more informative interpretation can be obtained by calculating the correlations
+between the Variables and PCs, and use them to plot a __Circle of Correlations__
+
+-----
+
+\scriptsize
+```{r fig.align='center', out.width='65%', fig.width=5, fig.height=5}
+# circle of correlations
+plot(pca, choix = "var", axes = c(1, 2))
+```
+
+-----
+
+# Squared Correlations
+
+- The correlation between a component and a variable estimates the 
+information they share.
+
+- Note that the sum of the squared coefficients of correlation
+between a variable and all the components is equal to 1.
+
+- As a consequence, the squared correlations are easier to interpret
+than the loadings.
+
+- This is because the squared correlations give the proportion of the
+variance of the variables explained by the components.
+
+-----
+
+\footnotesize
+```{r comment = ""}
+# squared correlations
+print(pca$var$cos2[ ,1:5], digits = 4)
+```
+
+-----
+
+# Clustering
+
+Often, it is interesting to use the output of a PCA, and take a 
+further step by performing clustering analysis.
+
+The most common type of clustering is hierarchical clustering. This can be
+easily performed with the `HCPC()` function from `"FactoMineR"`
+
+\scriptsize
+```{r}
+# looking for 4 clusters
+clustering <- HCPC(pca, nb.clust = 4, graph = FALSE)
+
+names(clustering)
+```
+
+-----
+
+\scriptsize
+```{r fig.align='center', out.height='80%', fig.width=7, fig.height=4}
+# Dendrogram (Hierarchical Clustering)
+plot(clustering, choice = "tree")
+```
+
+-----
+
+\scriptsize
+```{r fig.align='center', out.width='85%', fig.width=7, fig.height=6}
+# PCA plot with clusters
+plot(clustering, choice = "map")
+```
+
+-----
+
+\scriptsize
+```{r fig.align='center', out.width='85%', fig.width=7.5, fig.height=6}
+# PCA 3D-plot with clusters
+plot(clustering, choice = "3D.map")
+```
