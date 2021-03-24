@@ -1,0 +1,324 @@
+---
+title: "PCA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(FactoMineR)
+library(ggplot2)
+```
+
+```{r eval = FALSE}
+# required packages
+library(FactoMineR)
+library(ggplot2)
+```
+
+
+# PCA on Genomic Data
+
+This example uses the data `poulet` ("Chicken" in French) that comes in the R 
+package `"FactoMineR"` (by F. Husson, S. Le, J. Pages), and was kindly donated 
+by Prof. Sandrine Lagarrigue (Agrocampus, Rennes, France).
+
+```{r}
+# load data
+data(poulet)
+
+dim(poulet)
+```
+
+
+## Context
+
+The data relates to 43 chickens having undergone one of the six following 
+diet treatments:
+
+- `N`: normal diet
+- `J16`: fasting for 16 hours
+- `J16R5`: fasting for 16 hours then refed for 5 hours
+- `J16R16`: fasting for 16 hours then refed for 16 hours
+- `J48`: fasting for 48 hours
+- `J48R24`: fasting for 48 hours then refed for 24 hours
+
+```{r}
+summary(poulet$Diet)
+```
+
+At the end of the diet, the genes were analyzed using DNA chips, and the 
+expression of 7407 genes retained for all the chickens. A biologist selected
+the most pertinent genes, since at the beginning, more than 20,000 genes were
+identified by DNA chips. The data were then preprocessed in a standard manner
+for DNA chips (normalizing, eliminating the chip effect, etc.).
+
+The data table `poulet` is a data frame with 43 rows (chickens) and 7407
+columns. The first column `Diet` refers to the diet treatment, and the rest of
+the columns refer to the genes.
+
+The aim of the study is to see whether the genes are expressed differently 
+depending on the situation of stress (i.e. the type of diet) which the chicken
+is subject to. More precisely, it may be interesting to see how long the 
+chicken needs to be refed after fasting before it returns to a normal state, 
+i.e. a state comparable to the state of a chicken with a normal diet. Might some
+genes be unexpressed during fasting and overexpressed during feeding?
+
+
+## Performing PCA
+
+R has several functions (and packages) that allows us to performa a principal
+components analysis.
+
+One good starting option is the `prcomp()` function.
+
+Should the variables be standardized? In the `poulet` data, the variables are
+already standardized to provide the same influence to each gene.
+
+```{r}
+pca <- prcomp(poulet[ ,-1], scale. = FALSE)
+```
+
+`prcomp()` returns an object of class `"prcomp"`, which is an R list containing
+the following elements:
+
+```{r}
+names(pca)
+```
+
+- `sdev`: stands for _standard deviation_ and it contains the standard 
+deviations of the principal components
+
+- `rotation`: is the matrix of so-called _loadings_, that is the coefficients
+that let you form the principal components from the input variables; 
+it is called rotation because this is a _rotation matrix_ in linear algebra sense.
+
+- `center`: is a vector with the mean of each input variable
+
+- `scale`: is a logica value indicating whether the input variables are standardized
+or not
+
+- `x`: is a matrix containing whose columns are the principal components, 
+_aka_ PCA scores.
+
+
+### What to look for?
+
+- Inspect the values in `sdev`
+- Graph scatterplots of PCs in `x`
+- Graph scatterplots of loadings in `rotation`
+
+
+### PC's Variation
+
+Recall that `sdev` contains the standard deviations of the PCs. If we square
+these values, then we obtain the variances. The variances tells us how much
+variability (i.e. how much information) a given PC is _capturing_ from the 
+total variation in the data.
+
+```{r}
+# standard devitions of PCs
+head(pca$sdev)
+```
+
+```{r}
+# variances of PCs
+head(pca$sdev^2)
+```
+
+For convenience purposes, we can assemble a table with three columns: the
+variance of the PCs, the variance in percentage (proportion), and the cumulative proportions:
+
+```{r}
+pc_var <- data.frame(
+  variance = round(pca$sdev^2, 4),
+  percent = round(100 * pca$sdev^2 / sum(pca$sdev^2), 4),
+  cum_percent = 100 * cumsum(pca$sdev^2 / sum(pca$sdev^2))
+)
+
+head(pc_var, n = 5)
+tail(pc_var, n = 5)
+```
+
+Notice that the first PC has a variance of about 213.37, which accounts for the
+28.12% of total variability in the data. In turn, the second PC represents 
+10.90% of the variation in the data, and so on. Combined, the first two PCs
+capture about 40% of the variability in the data. Also, the last row in `pc_var` 
+has a variance of 0.
+
+This means that we obtained 42 dimensions at most, which corresponds to the 
+number of individuals minus 1 (and not the total number of variables): the 
+42 chickens are therefore in a space with 42 dimensions at most.
+
+Another way to think about what is happening is like this. The data contains 43 
+chickens on which we observe 4706 variables (genes). Geometrically, the data 
+points lie---theoretically---in a 43 dimensional space. If the genetic information
+in each chicken was unique, then each chicken would provide 
+$1/43 \times 100\% \approx 2.3255\%$ of the variation in the data.
+However, as you can tell from the above output,
+the first PC is actually capturing 28.12% of the variation! This tells us that
+there is a substantial amount of redundant (duplicated) genetic information in 
+the chickens. 
+
+We can see this better with a barplot of the variance proportions. We add a 
+dashed red horizontal line at 100/43, to indicate the theoretical proportion of
+unique variability that each chicken would account for, provided no redundant
+information was shared among them.
+
+```{r}
+barplot(pc_var$percent, las = 1, ylim = c(0, 30), border = NA)
+lines(1:length(pc_var$percent), pc_var$percent)
+abline(h = 100/43, col = "red", lty = 2)
+```
+
+
+### PC Scatterplots
+
+Let's now inspect a scatterplot of PCs
+
+```{r}
+plot(pca$x[ ,1], pca$x[ ,2], las = 1)
+abline(h = 0, v = 0, col = "gray80")
+```
+
+```{r echo = FALSE, eval = FALSE}
+plot(pca$x[ ,1], pca$x[ ,2], las = 1,
+     col = poulet$Diet)
+text(pca$x[ ,1], pca$x[ ,2], las = 1,
+     labels = poulet$Diet, col = factor(poulet$Diet))
+abline(h = 0, v = 0, col = "gray80")
+```
+
+We can color code the chickens based on type of diet
+
+```{r}
+pc_dat <- cbind.data.frame(
+  diet = poulet$Diet,
+  pca$x
+)
+head(pc_dat)
+```
+
+```{r}
+ggplot(data = pc_dat, aes(x = PC1, y = PC2, color = diet)) +
+  geom_vline(xintercept = 0, color = "gray90") +
+  geom_hline(yintercept = 0, color = "gray90") +
+  geom_point() +
+  geom_text(label = rownames(pc_dat), size = 2) +
+  theme_classic()
+```
+
+The principal plane separates the chickens into two subgroups:
+
+- those that have undergone intense stress (48 hours of fasting), are greatly
+scattered on the right side of the plot
+
+- those that been subject to less intense stress (16 hours of fasting), are 
+more concentrated on the left side, and located closer to the origin
+
+Furthermore, the second PC separates the chickens into three groups: chickens
+that have undergone intense stress but that have not been refed afterwards
+(`J48R24`), chickens that have undergone intense stress and that haven beed
+refed afterwards (`J48R24`), and the other chickens.
+
+Chickens which have been refed tend to recover from intense stress and their
+health tends to be similar to that of normal chickens.
+
+However, 24 hours of feeding does not seem to be enough for the state of the
+chicken to completely return to normal. This indicates that some genes are
+specific to a state of intense stress, and some genes are overexpressed under
+stress while others are underexpressed.
+
+
+
+## Scatterplot of loadings
+
+So far we've inspected the amount of variation captured by each PC, and also
+the main scatterplot between PC1 and PC2. But we should also take a look at 
+waht's happening with the _loadings_.
+
+Think of a loading as the weight or "importance" that a variable has behind
+a given PC. For instance, PC1 is calculated with the 4706 loading values 
+$w_{1,1}, w_{2,1}, \dots, w_{4706,1}$ in the first column of `rotation`:
+
+$$
+\texttt{PC1} = w_{1,1} \texttt{A4GALT} + w_{2,1} \texttt{A4GNT} + \dots +  w_{7405,1} \texttt{ZZEF111} + w_{7406,1} \texttt{ZZZ3}
+$$
+
+In turn, PC2 is calculated with the 4706 loading values 
+$w_{1,2}, w_{2,2}, \dots, w_{4706,2}$ in the second column of `rotation`:
+
+$$
+\texttt{PC2} = w_{1,2} \texttt{A4GALT} + w_{2,2} \texttt{A4GNT} + \dots +  w_{7405,2} \texttt{ZZEF111} + w_{7406,2} \texttt{ZZZ3}
+$$
+
+One way to explore loadings is by graphing a scatterplot of the columns in the
+`rotation` matrix. For example, here's the plot of the loadings for the first
+and the second PCs:
+
+```{r}
+load_dat <- as.data.frame(pca$rotation)
+
+ggplot(data = load_dat, aes(x = PC1, y = PC2)) +
+  geom_point(alpha = 0.3)
+```
+
+Each point represents the loadings of PC1 and PC2 for a given variable.
+As you can tell, the cloud of points is somewhat unclear with a large proportion
+of points vering overlapped (due to the large number of variables).
+
+Another way to explore the structure of the loadings is by looking at the 
+correlations between the input variables and the PCs
+
+Let $\mathbf{X}$ be the $43 \times 7406$ matrix of varibales, and $\mathbf{PC}$ 
+the $43 \times 43$ matrix of PCs. The correlation matrix between variables and
+PCs is given by:
+
+$$
+Cor(\mathbf{X}, \mathbf{PC}) = \begin{bmatrix}
+cor(X_1, \text{PC}_1) & cor(X_1, \text{PC}_2) & \cdots & cor(X_1, \text{PC}_{43}) \\
+cor(X_2, \text{PC}_1) & cor(X_2, \text{PC}_2) & \cdots & cor(X_2, \text{PC}_{43}) \\
+\vdots & \vdots & \ddots & \vdots \\
+cor(X_{7406}, \text{PC}_1) & cor(X_{7406}, \text{PC}_2) & \cdots & cor(X_{7406}, \text{PC}_{43}) \\
+\end{bmatrix}
+$$
+
+In R you can calculate this matrix as follows. We convert the output into a 
+data frame for graphing purposes via `ggplot()`:
+
+```{r}
+cor_dat <- as.data.frame(cor(poulet[ ,-1], pca$x))
+```
+
+Instead of directly plotting the loading values, we can graph the correlation
+values:
+
+```{r}
+ggplot(data = cor_dat, aes(x = PC1, y = PC2)) +
+  geom_point(alpha = 0.3)
+```
+
+This cloud of points is regularly distributed and does not need to be commented
+(but nonetheless had to be verified).
+
+We can look for those genes (variables) that are the most correlated with each 
+PC. Somewhat arbitrarily, we may begin looking for the top-10 largest correlations
+and see what variables (genes) are responsible for this.
+
+For example, with respect to PC1 the top 10 largest correlations come from 
+the following genes:
+
+```{r}
+tail(cor_dat[order(abs(cor_dat[,1])),1,drop = FALSE], n = 10)
+```
+
+For the PC2 we have:
+
+```{r}
+tail(cor_dat[order(abs(cor_dat[,2])),2,drop = FALSE], n = 10)
+```
+
+After identifying those genes that are highly correlated with PC1 and PC2
+(and possibly more PCs), we could ask a biologist/geneticist to analyze why
+these particular genes are under or overexpressed.
+
+
